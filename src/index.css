@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #F8FAFC;
+    --text-primary: #0F172A;
+    --card-bg: #FFFFFF;
+    --border-color: #CBD5E1;
+  }
+
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 20px; /* Base inicial confortável para idosos */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Modo de Alto Contraste para baixa visão ou catarata */
+  html.high-contrast {
+    --bg-primary: #000000;
+    --text-primary: #FFFFFF;
+    --card-bg: #121212;
+    --border-color: #FFDF00;
+  }
+
+  html.high-contrast body {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+  }
+}
+
+/* Foco acessível por teclado e leitor de tela */
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 4px solid #FFDF00 !important;
+  outline-offset: 3px;
+}
+
+/* Animação suave para onda de voz */
+@keyframes voice-wave {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-voice-1 {
+  animation: voice-wave 0.8s ease-in-out infinite;
+}
+.animate-voice-2 {
+  animation: voice-wave 0.8s ease-in-out 0.2s infinite;
+}
+.animate-voice-3 {
+  animation: voice-wave 0.8s ease-in-out 0.4s infinite;
+}
