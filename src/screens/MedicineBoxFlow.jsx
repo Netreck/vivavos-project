@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompressor';
 
-export function MedicineBoxFlow({ highContrast, tts, voice, hasConsent }) {
+export function MedicineBoxFlow({ highContrast, tts, voice, hasConsent, commandHandlerRef }) {
   const { speak, stop, isSpeaking, rate } = tts;
   const { startListening, stopListening, isListening } = voice;
 
@@ -58,10 +58,14 @@ export function MedicineBoxFlow({ highContrast, tts, voice, hasConsent }) {
     [flowState, analysisResult]
   );
 
-  // Conecta o listener do hook de voz ao comando atual
+  // Registra o handler no App, que recebe os comandos do hook de voz e os repassa para cá
   useEffect(() => {
-    voice.onCommand = handleVoiceCommand;
-  }, [voice, handleVoiceCommand]);
+    if (!commandHandlerRef) return;
+    commandHandlerRef.current = handleVoiceCommand;
+    return () => {
+      commandHandlerRef.current = null;
+    };
+  }, [commandHandlerRef, handleVoiceCommand]);
 
   // Processa a foto selecionada pela câmera ou galeria
   const handlePhotoCaptured = async (e) => {

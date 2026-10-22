@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Header } from './components/Header';
 import { VoiceStatusIndicator } from './components/VoiceStatusIndicator';
 import { ConsentModal } from './components/ConsentModal';
@@ -15,14 +15,21 @@ export function App() {
     return localStorage.getItem('vivavos-lgpd-consent') === 'true';
   });
 
+  // Handler da tela ativa (ex: confirmação do remédio), registrado pelo MedicineBoxFlow
+  const flowCommandHandlerRef = useRef(null);
+
   // Manipulador de comandos de voz no nível do App (ex: aceitar consentimento ou pausar)
   const handleVoiceCommand = (command) => {
-    if (!hasConsent && (command.type === 'CONFIRM' || command.text.toLowerCase().includes('concordo'))) {
-      handleAcceptConsent();
+    if (!hasConsent) {
+      if (command.type === 'CONFIRM' || command.text.toLowerCase().includes('concordo')) {
+        handleAcceptConsent();
+      }
     } else if (command.type === 'SLOWER') {
       tts.decreaseSpeed();
     } else if (command.type === 'FASTER') {
       tts.increaseSpeed();
+    } else if (flowCommandHandlerRef.current) {
+      flowCommandHandlerRef.current(command);
     }
   };
 
@@ -66,6 +73,7 @@ export function App() {
           tts={tts}
           voice={voice}
           hasConsent={hasConsent}
+          commandHandlerRef={flowCommandHandlerRef}
         />
       </main>
 

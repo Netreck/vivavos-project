@@ -28,6 +28,28 @@ function playAudioCue(freq = 440, duration = 0.12) {
   }
 }
 
+/**
+ * Classifica a fala do idoso em um comando simples.
+ * A negação é verificada ANTES da confirmação: "não está certo" precisa virar REJECT,
+ * nunca CONFIRM. As palavras são comparadas inteiras (sem acento) para evitar falsos
+ * positivos como "assim" contendo "sim".
+ */
+export function classifyCommand(text) {
+  const normalized = (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+  const has = (...words) => words.some((w) => new RegExp(`\\b${w}\\b`).test(normalized));
+
+  if (has('nao', 'errado', 'errada', 'outra', 'cancelar', 'cancela')) return 'REJECT';
+  if (has('sim', 'certo', 'certa', 'correto', 'correta', 'confirmo', 'pode', 'isso')) return 'CONFIRM';
+  if (has('devagar', 'lento', 'menos')) return 'SLOWER';
+  if (has('rapido')) return 'FASTER';
+  if (has('repetir', 'repete', 'de novo', 'denovo', 'ouvir', 'ler')) return 'REPEAT';
+  return 'SPEECH';
+}
+
 export function useVoiceRecognition(options = {}) {
   const { onCommand } = options;
   const [isListening, setIsListening] = useState(false);
@@ -69,42 +91,7 @@ export function useVoiceRecognition(options = {}) {
 
       const isFinal = event.results[current].isFinal;
       if (isFinal && onCommandRef.current) {
-        const lower = text.toLowerCase().trim();
-
-        // Análise de comandos de voz simples e intuitivos para idosos
-        if (
-          lower.includes('sim') ||
-          lower.includes('certo') ||
-          lower.includes('correto') ||
-          lower.includes('confirmo') ||
-          lower.includes('pode') ||
-          lower.includes('isso')
-        ) {
-          onCommandRef.current({ type: 'CONFIRM', text });
-        } else if (
-          lower.includes('não') ||
-          lower.includes('nao') ||
-          lower.includes('errado') ||
-          lower.includes('outra') ||
-          lower.includes('tirar outra') ||
-          lower.includes('cancelar')
-        ) {
-          onCommandRef.current({ type: 'REJECT', text });
-        } else if (lower.includes('devagar') || lower.includes('lento') || lower.includes('menos')) {
-          onCommandRef.current({ type: 'SLOWER', text });
-        } else if (lower.includes('rápido') || lower.includes('rapido') || lower.includes('mais rápido')) {
-          onCommandRef.current({ type: 'FASTER', text });
-        } else if (
-          lower.includes('repetir') ||
-          lower.includes('de novo') ||
-          lower.includes('denovo') ||
-          lower.includes('ouvir') ||
-          lower.includes('ler')
-        ) {
-          onCommandRef.current({ type: 'REPEAT', text });
-        } else {
-          onCommandRef.current({ type: 'SPEECH', text });
-        }
+        onCommandRef.current({ type: classifyCommand(text), text });
       }
     };
 
