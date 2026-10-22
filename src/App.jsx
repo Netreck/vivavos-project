@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { AccessibilityBar } from './components/AccessibilityBar';
+import { SiteFooter } from './components/SiteFooter';
 import { VoiceStatusIndicator } from './components/VoiceStatusIndicator';
 import { ConsentModal } from './components/ConsentModal';
 import { HomeScreen } from './screens/HomeScreen';
@@ -61,44 +62,63 @@ export function App() {
     e.target.value = '';
     if (!file) return;
     setFlow({ kind: pendingKindRef.current, file });
+    window.scrollTo(0, 0);
   };
 
-  const goHome = () => setFlow(null);
+  // Navegação do menu: volta para a página inicial (se estiver num fluxo) e rola até a seção
+  const [scrollTarget, setScrollTarget] = useState(null);
+  const navigateTo = (sectionId) => {
+    setFlow(null);
+    setScrollTarget(sectionId);
+  };
+
+  useEffect(() => {
+    if (flow || !scrollTarget) return;
+    const section = document.getElementById(scrollTarget);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.focus({ preventScroll: true });
+    }
+    setScrollTarget(null);
+  }, [flow, scrollTarget]);
+
+  const goHome = () => navigateTo('inicio');
 
   return (
-    <div className="min-h-screen bg-page text-ink font-sans sm:py-8 sm:px-4">
+    <div className="min-h-screen flex flex-col bg-surface text-ink font-sans">
       {/* Sem "capture": o celular oferece tirar foto ou escolher da galeria; no computador abre o seletor de arquivos */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChosen} />
 
-      <div className="mx-auto max-w-[34rem] min-h-screen sm:min-h-0 bg-surface border-t-[6px] border-primary sm:rounded-lg shadow-card overflow-hidden">
-        <Header />
+      <AccessibilityBar accessibility={accessibility} tts={tts} onNavigate={navigateTo} />
+      <Header onNavigate={navigateTo} />
 
-        <main className="px-5 sm:px-6 pt-5 pb-6" role="main">
-          {flow ? (
-            <PhotoFlow
-              key={flow.kind}
-              kind={flow.kind}
-              file={flow.file}
-              onRetake={() => openCamera(flow.kind)}
-              onHome={goHome}
-              tts={tts}
-              voice={voice}
-              commandHandlerRef={screenCommandHandlerRef}
-            />
-          ) : (
-            <HomeScreen
-              onPickPhoto={openCamera}
-              tts={tts}
-              voice={voice}
-              commandHandlerRef={screenCommandHandlerRef}
-            />
-          )}
-        </main>
+      <main id="conteudo" tabIndex={-1} className="flex-1" role="main">
+        {flow ? (
+          <div className="bg-page border-t border-line py-8 md:py-12 px-4 sm:px-6">
+            <div className="max-w-3xl mx-auto bg-surface rounded-lg border-2 border-line p-5 sm:p-8">
+              <PhotoFlow
+                key={flow.kind}
+                kind={flow.kind}
+                file={flow.file}
+                onRetake={() => openCamera(flow.kind)}
+                onHome={goHome}
+                tts={tts}
+                voice={voice}
+                commandHandlerRef={screenCommandHandlerRef}
+              />
+            </div>
+          </div>
+        ) : (
+          <HomeScreen
+            onPickPhoto={openCamera}
+            tts={tts}
+            voice={voice}
+            commandHandlerRef={screenCommandHandlerRef}
+          />
+        )}
+      </main>
 
-        <footer className="px-5 sm:px-6 pb-24 sm:pb-6">
-          <AccessibilityBar accessibility={accessibility} tts={tts} />
-        </footer>
-      </div>
+      <SiteFooter onNavigate={navigateTo} />
 
       <VoiceStatusIndicator voice={voice} tts={tts} />
 

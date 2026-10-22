@@ -63,6 +63,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline-offset: 3px;
 }
 
+/* Menu com rolagem lateral no celular, sem barra visível */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Animação suave para onda de voz */
 @keyframes voice-wave {
   0%, 100% {

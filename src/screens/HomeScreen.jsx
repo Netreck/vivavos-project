@@ -1,6 +1,22 @@
 import React, { useEffect, useCallback } from 'react';
-import { Camera, FileText, Mic } from 'lucide-react';
-import { Button, Divider, SmallPrint } from '../components/ui';
+import {
+  Camera,
+  CircleCheck,
+  Ear,
+  FileText,
+  Hand,
+  Keyboard,
+  Landmark,
+  Lock,
+  Mic,
+  Contrast,
+  ScanSearch,
+  ShieldCheck,
+  Stethoscope,
+  Type,
+  Volume2,
+} from 'lucide-react';
+import { Button } from '../components/ui';
 
 function normalize(text) {
   return (text || '')
@@ -15,7 +31,7 @@ function ChoiceCard({ icon: Icon, title, subtitle, filled, onClick, ariaLabel })
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`text-left rounded-lg p-4 sm:p-5 min-h-[9.5rem] flex flex-col justify-between gap-4 transition active:scale-[0.98] ${
+      className={`text-left rounded-lg p-5 min-h-[10rem] flex flex-col justify-between gap-4 transition active:scale-[0.98] ${
         filled
           ? 'bg-primary text-on-primary border-2 border-primary hover:brightness-110'
           : 'bg-surface text-ink border-2 border-strong hover:bg-page'
@@ -30,12 +46,51 @@ function ChoiceCard({ icon: Icon, title, subtitle, filled, onClick, ariaLabel })
         <Icon className="w-6 h-6" strokeWidth={2.25} />
       </span>
       <span>
-        <span className="block text-[1.4rem] font-bold leading-tight">{title}</span>
+        <span className="block text-[1.45rem] font-bold leading-tight">{title}</span>
         <span className="block text-[1rem] mt-1 opacity-95">{subtitle}</span>
       </span>
     </button>
   );
 }
+
+function Section({ id, title, intro, tone = 'page', children }) {
+  return (
+    <section
+      id={id}
+      tabIndex={-1}
+      aria-labelledby={`${id}-titulo`}
+      className={`${tone === 'page' ? 'bg-page' : 'bg-surface'} border-t border-line scroll-mt-4`}
+    >
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+        <h2 id={`${id}-titulo`} className="text-[1.8rem] font-bold leading-tight">
+          {title}
+        </h2>
+        {intro && <p className="mt-2 text-[1.05rem] text-muted max-w-2xl">{intro}</p>}
+        <div className="mt-6">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function FeatureItem({ icon: Icon, title, children }) {
+  return (
+    <li className="flex gap-4 p-4 rounded-lg bg-surface border-2 border-line">
+      <span className="shrink-0 w-11 h-11 rounded-full bg-primary-soft text-primary flex items-center justify-center" aria-hidden="true">
+        <Icon className="w-6 h-6" strokeWidth={2.25} />
+      </span>
+      <div>
+        <h3 className="text-[1.15rem] font-bold leading-snug">{title}</h3>
+        <p className="mt-1">{children}</p>
+      </div>
+    </li>
+  );
+}
+
+const STEPS = [
+  { icon: Camera, title: 'Tire ou envie a foto', text: 'Da frente da caixa do remédio ou do papel do exame, com boa luz.' },
+  { icon: ScanSearch, title: 'Confira o que eu li', text: 'Eu falo o nome que li e pergunto: “Está certo?”. Responda com a voz ou com o botão.' },
+  { icon: Volume2, title: 'Ouça a explicação', text: 'Só depois de você confirmar, eu explico em voz alta e em palavras simples.' },
+];
 
 export function HomeScreen({ onPickPhoto, tts, voice, commandHandlerRef }) {
   const { speak, stop } = tts;
@@ -69,41 +124,128 @@ export function HomeScreen({ onPickPhoto, tts, voice, commandHandlerRef }) {
   };
 
   return (
-    <div>
-      <h1 className="text-[1.75rem] leading-tight font-bold mb-5">O que você quer entender hoje?</h1>
+    <>
+      {/* Início: ação principal */}
+      <section id="inicio" tabIndex={-1} aria-labelledby="inicio-titulo" className="bg-surface scroll-mt-4">
+        {/* No celular: título, cards, voz. No computador: título e voz à esquerda, cards à direita */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-14 grid gap-x-10 gap-y-6 md:grid-cols-[1fr_1.15fr] md:items-center">
+          <div className="md:self-end">
+            <h1 id="inicio-titulo" className="text-[2rem] md:text-[2.4rem] leading-tight font-bold">
+              O que você quer entender hoje?
+            </h1>
+            <p className="mt-3 text-[1.1rem] max-w-md">
+              Mostre a caixa do remédio ou o papel do exame. O Vivavós lê e explica em voz alta, com palavras simples.
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4">
-        <ChoiceCard
-          filled
-          icon={Camera}
-          title="Foto do remédio"
-          subtitle="Mostre a caixa e eu explico."
-          ariaLabel="Foto do remédio. Mostre a caixa e eu explico."
-          onClick={() => onPickPhoto('medicine')}
-        />
-        <ChoiceCard
-          icon={FileText}
-          title="Foto do exame"
-          subtitle="Mostre o papel e eu explico."
-          ariaLabel="Foto do exame. Mostre o papel e eu explico."
-          onClick={() => onPickPhoto('exam')}
-        />
-      </div>
+          <div className="md:col-start-2 md:row-start-1 md:row-span-2">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4">
+              <ChoiceCard
+                filled
+                icon={Camera}
+                title="Foto do remédio"
+                subtitle="Mostre a caixa e eu explico."
+                ariaLabel="Foto do remédio. Mostre a caixa e eu explico."
+                onClick={() => onPickPhoto('medicine')}
+              />
+              <ChoiceCard
+                icon={FileText}
+                title="Foto do exame"
+                subtitle="Mostre o papel e eu explico."
+                ariaLabel="Foto do exame. Mostre o papel e eu explico."
+                onClick={() => onPickPhoto('exam')}
+              />
+            </div>
+            <p className="mt-3 text-[0.9rem] text-muted">Pode tirar a foto agora ou escolher uma que já está no celular.</p>
+          </div>
 
-      <p className="mt-3 text-[0.9rem] text-muted">Pode tirar a foto agora ou escolher uma que já está no celular.</p>
+          <div className="md:self-start">
+            <p className="mb-2 text-[0.95rem]">Ou diga: “Vivavós, que remédio é esse?”</p>
+            <Button variant="accent" icon={Mic} onClick={handleTalk} className="min-h-[3.75rem] text-[1.25rem] md:max-w-sm">
+              Toque e fale
+            </Button>
+            {voice.error && (
+              <p role="alert" className="mt-2 text-[0.9rem] font-bold text-danger">
+                {voice.error}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
-      <p className="mt-6 mb-2 text-[0.95rem]">Ou diga: “Vivavós, que remédio é esse?”</p>
-      <Button variant="accent" icon={Mic} onClick={handleTalk} className="min-h-[3.75rem] text-[1.25rem]">
-        Toque e fale
-      </Button>
-      {voice.error && (
-        <p role="alert" className="mt-2 text-[0.9rem] font-bold text-danger">
-          {voice.error}
-        </p>
-      )}
+      <Section id="como-funciona" title="Como funciona" intro="Três passos, sempre nesta ordem.">
+        <ol className="grid gap-4 md:grid-cols-3">
+          {STEPS.map((step, i) => (
+            <li key={step.title} className="p-5 rounded-lg bg-surface border-2 border-line">
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-md bg-ink text-surface font-bold flex items-center justify-center" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <step.icon className="w-7 h-7 text-primary" strokeWidth={2.25} aria-hidden="true" />
+              </div>
+              <h3 className="mt-3 text-[1.2rem] font-bold">{step.title}</h3>
+              <p className="mt-1">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </Section>
 
-      <Divider className="mt-6 mb-4" />
-      <SmallPrint>Esta página ajuda você a ler. Ela não substitui o médico nem o farmacêutico.</SmallPrint>
-    </div>
+      <Section
+        id="seguranca"
+        tone="surface"
+        title="Segurança em primeiro lugar"
+        intro="Regras que o Vivavós segue em toda leitura."
+      >
+        <ul className="grid gap-4 md:grid-cols-2">
+          <FeatureItem icon={ScanSearch} title="Nunca adivinha">
+            Se a foto estiver borrada, escura ou cortada, eu peço outra foto em vez de chutar.
+          </FeatureItem>
+          <FeatureItem icon={CircleCheck} title="Confirma antes de explicar">
+            Eu sempre falo o que li e espero você dizer que está certo.
+          </FeatureItem>
+          <FeatureItem icon={Landmark} title="Fonte oficial">
+            Remédios: bula registrada na ANVISA. Exames: o valor esperado impresso no próprio laudo.
+          </FeatureItem>
+          <FeatureItem icon={Stethoscope} title="Não substitui o médico">
+            As explicações ajudam a ler. Quem orienta o tratamento é o seu médico ou farmacêutico.
+          </FeatureItem>
+          <FeatureItem icon={Lock} title="Privacidade (LGPD)">
+            As fotos são lidas na hora e apagadas em seguida. Nada fica guardado.
+          </FeatureItem>
+          <FeatureItem icon={ShieldCheck} title="Sem cadastro">
+            Você não precisa criar conta nem informar dados pessoais.
+          </FeatureItem>
+        </ul>
+      </Section>
+
+      <Section
+        id="acessibilidade"
+        title="Acessibilidade"
+        intro="O Vivavós segue as recomendações de acessibilidade do governo (eMAG) para que todos consigam usar."
+      >
+        <ul className="grid gap-4 md:grid-cols-2">
+          <FeatureItem icon={Hand} title="Libras com o VLibras">
+            Toque no ícone azul de mãos, no lado direito da tela, para ver o conteúdo traduzido para Libras.
+          </FeatureItem>
+          <FeatureItem icon={Ear} title="Voz em português do Brasil">
+            Tudo é lido em voz alta. Use os botões 🐢 e 🐇 no topo da página para deixar a fala mais devagar ou mais
+            rápida.
+          </FeatureItem>
+          <FeatureItem icon={Mic} title="Comandos de voz">
+            Diga “sim”, “não”, “de novo”, “mais devagar” ou “mais rápido”. Funciona melhor no Google Chrome e no
+            Microsoft Edge.
+          </FeatureItem>
+          <FeatureItem icon={Type} title="Letra maior">
+            Use os botões A− e A+ no topo da página para mudar o tamanho da letra.
+          </FeatureItem>
+          <FeatureItem icon={Contrast} title="Alto contraste">
+            O botão “Contraste”, no topo, deixa o fundo preto e as letras em branco e amarelo.
+          </FeatureItem>
+          <FeatureItem icon={Keyboard} title="Atalhos de teclado">
+            Alt+1 vai para o conteúdo, Alt+2 para o menu e Alt+3 para o rodapé (no Firefox, Alt+Shift+número).
+          </FeatureItem>
+        </ul>
+      </Section>
+    </>
   );
 }
