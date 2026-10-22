@@ -90,6 +90,8 @@ export function HomeScreen({ onPickPhoto, tts, voice, commandHandlerRef }) {
         />
       </div>
 
+      <p className="mt-3 text-[0.9rem] text-muted">Pode tirar a foto agora ou escolher uma que já está no celular.</p>
+
       <p className="mt-6 mb-2 text-[0.95rem]">Ou diga: “Vivavós, que remédio é esse?”</p>
       <Button variant="accent" icon={Mic} onClick={handleTalk} className="min-h-[3.75rem] text-[1.25rem]">
         Toque e fale

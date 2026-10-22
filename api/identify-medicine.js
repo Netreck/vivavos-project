@@ -1,18 +1,16 @@
 import { getVisionProvider } from './_lib/vision/index.js';
+import { guardRequest } from './_lib/http/guard.js';
 import { searchOfficialBula } from './_lib/bulario/anvisaService.js';
 
 export default async function handler(req, res) {
-  // Configura cabeçalhos CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: { message: 'Método não permitido. Utilize POST.' } });
+  }
+
+  // Só o próprio site, com limite de uso, para proteger os créditos da OpenAI
+  const rejection = guardRequest(req);
+  if (rejection) {
+    return res.status(rejection.status).json({ error: { code: rejection.code, message: rejection.message } });
   }
 
   try {

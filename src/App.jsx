@@ -67,14 +67,8 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-page text-ink font-sans sm:py-8 sm:px-4">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleFileChosen}
-      />
+      {/* Sem "capture": o celular oferece tirar foto ou escolher da galeria; no computador abre o seletor de arquivos */}
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChosen} />
 
       <div className="mx-auto max-w-[34rem] min-h-screen sm:min-h-0 bg-surface border-t-[6px] border-primary sm:rounded-lg shadow-card overflow-hidden">
         <Header />
