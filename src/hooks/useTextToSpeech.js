@@ -1,5 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Vozes brasileiras mais naturais primeiro (Edge, Chrome, Windows, Apple)
+const PREFERRED_PT_BR_VOICES = ['Francisca', 'Thalita', 'Antonio', 'Google', 'Luciana', 'Maria', 'Daniel', 'Felipe'];
+
+/**
+ * Escolhe uma voz do português do Brasil. Nunca devolve voz de Portugal (pt-PT).
+ */
+export function pickBrazilianVoice(voices) {
+  const ptBr = voices.filter((v) => v.lang.replace('_', '-').toLowerCase() === 'pt-br');
+  if (ptBr.length === 0) return null;
+  for (const name of PREFERRED_PT_BR_VOICES) {
+    const match = ptBr.find((v) => v.name.includes(name));
+    if (match) return match;
+  }
+  return ptBr[0];
+}
+
 export function useTextToSpeech(initialRate = 0.85) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
@@ -12,7 +28,13 @@ export function useTextToSpeech(initialRate = 0.85) {
   useEffect(() => {
     if (!window.speechSynthesis) {
       setIsSupported(false);
+      return;
     }
+    // No Chrome a lista de vozes chega depois; pedir de novo garante que ela esteja pronta na primeira fala
+    const loadVoices = () => window.speechSynthesis.getVoices();
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
   }, []);
 
   useEffect(() => {
@@ -31,11 +53,10 @@ export function useTextToSpeech(initialRate = 0.85) {
       utterance.rate = rate; // Ajustado para compreensão de idosos
       utterance.pitch = 1.0;
 
-      // Tenta selecionar voz pt-BR natural se houver
-      const voices = window.speechSynthesis.getVoices();
-      const ptVoice = voices.find((v) => v.lang.startsWith('pt') && (v.name.includes('Google') || v.name.includes('Luciana') || v.name.includes('Maria') || v.name.includes('Francisca')));
-      if (ptVoice) {
-        utterance.voice = ptVoice;
+      // Usa somente vozes do português do Brasil; sem nenhuma, o navegador escolhe pelo lang pt-BR
+      const ptBrVoice = pickBrazilianVoice(window.speechSynthesis.getVoices());
+      if (ptBrVoice) {
+        utterance.voice = ptBrVoice;
       }
 
       utterance.onstart = () => {

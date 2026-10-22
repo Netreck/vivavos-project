@@ -1,5 +1,5 @@
-import { getVisionProvider } from './lib/vision/index.js';
-import { searchOfficialBula } from './lib/bulario/anvisaService.js';
+import { getVisionProvider } from './_lib/vision/index.js';
+import { searchOfficialBula } from './_lib/bulario/anvisaService.js';
 
 export default async function handler(req, res) {
   // Configura cabeçalhos CORS
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
         confidence: 'high',
         medicineName: 'Losartana Potássica',
         dosage: '50 mg',
+        form: 'comprimido',
         activeIngredient: 'Losartana potássica',
         laboratory: 'Genérico demonstrativo (Configure OPENAI_API_KEY no .env)',
         reasonIfIllegible: null,
@@ -73,6 +74,7 @@ export default async function handler(req, res) {
 
     // Texto de confirmação obrigatório antes de qualquer explicação
     const voiceConfirmationText = `Li ${visionResult.medicineName}${visionResult.dosage ? ` ${visionResult.dosage}` : ''}. Está certo?`;
+    const detail = [visionResult.dosage, visionResult.form].filter(Boolean).join(' · ');
 
     return res.status(200).json({
       success: true,
@@ -81,13 +83,14 @@ export default async function handler(req, res) {
       medicine: {
         name: visionResult.medicineName,
         dosage: visionResult.dosage,
+        form: visionResult.form,
         activeIngredient: visionResult.activeIngredient,
         laboratory: visionResult.laboratory,
       },
       // Confirmação por voz que deve acontecer antes da explicação
-      confirmationPrompt: {
+      confirmation: {
         voiceText: voiceConfirmationText,
-        displayText: `Li: "${visionResult.medicineName} ${visionResult.dosage || ''}". Está certo?`,
+        items: [{ title: visionResult.medicineName, detail: detail || null }],
       },
       // Informações oficiais da bula para serem liberadas após o "Sim"
       bulaOfficial: bulaResult.found ? bulaResult.bula : null,

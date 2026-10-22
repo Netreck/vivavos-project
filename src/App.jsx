@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Header } from './components/Header';
+import { AccessibilityBar } from './components/AccessibilityBar';
 import { VoiceStatusIndicator } from './components/VoiceStatusIndicator';
 import { ConsentModal } from './components/ConsentModal';
-import { MedicineBoxFlow } from './screens/MedicineBoxFlow';
+import { HomeScreen } from './screens/HomeScreen';
+import { PhotoFlow } from './screens/PhotoFlow';
 import { useAccessibility } from './hooks/useAccessibility';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useVoiceRecognition } from './hooks/useVoiceRecognition';
@@ -15,8 +17,13 @@ export function App() {
     return localStorage.getItem('vivavos-lgpd-consent') === 'true';
   });
 
-  // Handler da tela ativa (ex: confirmação do remédio), registrado pelo MedicineBoxFlow
-  const flowCommandHandlerRef = useRef(null);
+  // Fluxo atual: null = tela inicial; { kind: 'medicine' | 'exam', file }
+  const [flow, setFlow] = useState(null);
+  const pendingKindRef = useRef('medicine');
+  const fileInputRef = useRef(null);
+
+  // Handler da tela ativa (início ou fluxo de foto), registrado pela própria tela
+  const screenCommandHandlerRef = useRef(null);
 
   // Manipulador de comandos de voz no nível do App (ex: aceitar consentimento ou pausar)
   const handleVoiceCommand = (command) => {
@@ -28,8 +35,8 @@ export function App() {
       tts.decreaseSpeed();
     } else if (command.type === 'FASTER') {
       tts.increaseSpeed();
-    } else if (flowCommandHandlerRef.current) {
-      flowCommandHandlerRef.current(command);
+    } else if (screenCommandHandlerRef.current) {
+      screenCommandHandlerRef.current(command);
     }
   };
 
@@ -38,55 +45,71 @@ export function App() {
   const handleAcceptConsent = () => {
     localStorage.setItem('vivavos-lgpd-consent', 'true');
     setHasConsent(true);
-    tts.speak('Consentimento confirmado. Bem-vindo ao Vivavós!');
+    tts.speak(
+      'Obrigado! Toque em Foto do remédio para a caixa do remédio, ou em Foto do exame para o papel do exame.'
+    );
   };
 
-  return (
-    <div
-      className={`min-h-screen flex flex-col transition-colors duration-200 ${
-        accessibility.highContrast ? 'bg-black text-white' : 'bg-slate-50 text-slate-900'
-      }`}
-    >
-      {/* Barra de Topo com Controles de Acessibilidade */}
-      <Header accessibility={accessibility} tts={tts} />
+  // Abrir a câmera precisa acontecer dentro de um toque do usuário
+  const openCamera = (kind) => {
+    pendingKindRef.current = kind;
+    fileInputRef.current?.click();
+  };
 
-      {/* Indicador de Voz e Microfone (Visual + Feedback) */}
-      <VoiceStatusIndicator
-        voice={voice}
-        tts={tts}
-        highContrast={accessibility.highContrast}
+  const handleFileChosen = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setFlow({ kind: pendingKindRef.current, file });
+  };
+
+  const goHome = () => setFlow(null);
+
+  return (
+    <div className="min-h-screen bg-page text-ink font-sans sm:py-8 sm:px-4">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChosen}
       />
+
+      <div className="mx-auto max-w-[34rem] min-h-screen sm:min-h-0 bg-surface border-t-[6px] border-primary sm:rounded-lg shadow-card overflow-hidden">
+        <Header />
+
+        <main className="px-5 sm:px-6 pt-5 pb-6" role="main">
+          {flow ? (
+            <PhotoFlow
+              key={flow.kind}
+              kind={flow.kind}
+              file={flow.file}
+              onRetake={() => openCamera(flow.kind)}
+              onHome={goHome}
+              tts={tts}
+              voice={voice}
+              commandHandlerRef={screenCommandHandlerRef}
+            />
+          ) : (
+            <HomeScreen
+              onPickPhoto={openCamera}
+              tts={tts}
+              voice={voice}
+              commandHandlerRef={screenCommandHandlerRef}
+            />
+          )}
+        </main>
+
+        <footer className="px-5 sm:px-6 pb-24 sm:pb-6">
+          <AccessibilityBar accessibility={accessibility} tts={tts} />
+        </footer>
+      </div>
+
+      <VoiceStatusIndicator voice={voice} tts={tts} />
 
       {/* Modal de Consentimento Obrigatório LGPD */}
-      <ConsentModal
-        isOpen={!hasConsent}
-        onAccept={handleAcceptConsent}
-        highContrast={accessibility.highContrast}
-        tts={tts}
-        voice={voice}
-      />
-
-      {/* Fluxo Central do MVP: Leitura de Caixa de Remédio */}
-      <main className="flex-1 flex flex-col justify-center pb-12" role="main">
-        <MedicineBoxFlow
-          highContrast={accessibility.highContrast}
-          tts={tts}
-          voice={voice}
-          hasConsent={hasConsent}
-          commandHandlerRef={flowCommandHandlerRef}
-        />
-      </main>
-
-      {/* Rodapé Acessível */}
-      <footer
-        className={`w-full py-4 px-4 text-center text-sm font-semibold border-t-2 ${
-          accessibility.highContrast
-            ? 'bg-zinc-950 border-zinc-800 text-zinc-400'
-            : 'bg-slate-100 border-slate-200 text-slate-600'
-        }`}
-      >
-        <p>Vivavós • Feito com acessibilidade para você • Dados da Bula Oficial da ANVISA</p>
-      </footer>
+      <ConsentModal isOpen={!hasConsent} onAccept={handleAcceptConsent} tts={tts} voice={voice} />
     </div>
   );
 }

@@ -4,42 +4,62 @@
 
 @layer base {
   :root {
-    --bg-primary: #F8FAFC;
-    --text-primary: #0F172A;
-    --card-bg: #FFFFFF;
-    --border-color: #CBD5E1;
-  }
-
-  html {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 20px; /* Base inicial confortável para idosos */
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    min-height: 100vh;
-    line-height: 1.5;
+    --c-page: #E4E7EC;
+    --c-surface: #FFFFFF;
+    --c-ink: #13171A;
+    --c-muted: #4A5058;
+    --c-line: #D5DAE0;
+    --c-strong: #262A2C;
+    --c-primary: #0A4F8A;
+    --c-primary-soft: #E3EBF6;
+    --c-primary-icon: #376F9E;
+    --c-on-primary: #FFFFFF;
+    --c-accent: #FEB938;
+    --c-on-accent: #13171A;
+    --c-logo-wave: #FEB938;
+    --c-warn-soft: #FFF3D9;
+    --c-ok: #1E7B4C;
+    --c-ok-soft: #E2F2E9;
+    --c-danger: #B42318;
   }
 
   /* Modo de Alto Contraste para baixa visão ou catarata */
   html.high-contrast {
-    --bg-primary: #000000;
-    --text-primary: #FFFFFF;
-    --card-bg: #121212;
-    --border-color: #FFDF00;
+    --c-page: #000000;
+    --c-surface: #000000;
+    --c-ink: #FFFFFF;
+    --c-muted: #E5E5E5;
+    --c-line: #6B6B6B;
+    --c-strong: #FFFFFF;
+    --c-primary: #FFDF00;
+    --c-primary-soft: #262626;
+    --c-primary-icon: #000000;
+    --c-on-primary: #000000;
+    --c-accent: #FFDF00;
+    --c-on-accent: #000000;
+    --c-logo-wave: #000000;
+    --c-warn-soft: #1A1A1A;
+    --c-ok: #4ADE80;
+    --c-ok-soft: #0F2A1A;
+    --c-danger: #FF8A80;
   }
 
-  html.high-contrast body {
-    background-color: #000000 !important;
-    color: #FFFFFF !important;
+  html {
+    font-size: 18px; /* Base confortável; ajustável pelos botões A- e A+ */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--c-page);
+    color: var(--c-ink);
+    min-height: 100vh;
+    line-height: 1.45;
   }
 }
 
 /* Foco acessível por teclado e leitor de tela */
 button:focus-visible, a:focus-visible, input:focus-visible {
-  outline: 4px solid #FFDF00 !important;
+  outline: 4px solid var(--c-accent) !important;
   outline-offset: 3px;
 }
 

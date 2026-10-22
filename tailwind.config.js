@@ -4,25 +4,34 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
+      // Cores vêm de variáveis CSS (src/index.css) para o modo de alto contraste trocar tudo de uma vez
       colors: {
-        viva: {
-          blue: '#1351B4',      // Azul institucional acolhedor e legível
-          blueDark: '#0C326F',
-          yellow: '#FFDF00',    // Amarelo para alto contraste
-          green: '#15803D',     // Verde confirmação
-          red: '#B91C1C',       // Vermelho alerta
-        }
+        page: 'var(--c-page)',
+        surface: 'var(--c-surface)',
+        ink: 'var(--c-ink)',
+        muted: 'var(--c-muted)',
+        line: 'var(--c-line)',
+        strong: 'var(--c-strong)',
+        primary: 'var(--c-primary)',
+        'primary-soft': 'var(--c-primary-soft)',
+        'primary-icon': 'var(--c-primary-icon)',
+        'on-primary': 'var(--c-on-primary)',
+        accent: 'var(--c-accent)',
+        'on-accent': 'var(--c-on-accent)',
+        'logo-wave': 'var(--c-logo-wave)',
+        'warn-soft': 'var(--c-warn-soft)',
+        ok: 'var(--c-ok)',
+        'ok-soft': 'var(--c-ok-soft)',
+        danger: 'var(--c-danger)',
       },
-      fontSize: {
-        'accessible-sm': '1.125rem', // 18px mínimo
-        'accessible-base': '1.375rem', // 22px
-        'accessible-lg': '1.625rem', // 26px
-        'accessible-xl': '2rem',     // 32px
-        'accessible-2xl': '2.5rem',  // 40px
-      }
+      fontFamily: {
+        sans: ['"Atkinson Hyperlegible"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 10px 30px -12px rgba(19, 23, 26, 0.25)',
+      },
     },
   },
   plugins: [],

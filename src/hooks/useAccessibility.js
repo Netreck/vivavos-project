@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
+export const MIN_FONT = 16;
+export const MAX_FONT = 26;
+
 export function useAccessibility() {
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('vivavos-fontsize');
-    return saved ? parseInt(saved, 10) : 20; // 20px padrão para terceira idade
+    const parsed = saved ? parseInt(saved, 10) : NaN;
+    return parsed >= MIN_FONT && parsed <= MAX_FONT ? parsed : 18; // 18px padrão para terceira idade
   });
 
   const [highContrast, setHighContrast] = useState(() => {
@@ -18,21 +22,15 @@ export function useAccessibility() {
 
   useEffect(() => {
     localStorage.setItem('vivavos-highcontrast', highContrast.toString());
-    if (highContrast) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.add('high-contrast');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.remove('high-contrast');
-    }
+    document.documentElement.classList.toggle('high-contrast', highContrast);
   }, [highContrast]);
 
   const increaseFontSize = useCallback(() => {
-    setFontSize((prev) => Math.min(prev + 2, 28));
+    setFontSize((prev) => Math.min(prev + 2, MAX_FONT));
   }, []);
 
   const decreaseFontSize = useCallback(() => {
-    setFontSize((prev) => Math.max(prev - 2, 18));
+    setFontSize((prev) => Math.max(prev - 2, MIN_FONT));
   }, []);
 
   const toggleHighContrast = useCallback(() => {

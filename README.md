@@ -9,8 +9,8 @@ O **Vivavós** é uma aplicação web progressiva e responsiva desenvolvida espe
 - **Frontend**: React 18, Vite, TailwindCSS (paleta de alto contraste, tipografia ampliada de 20px a 28px e alvos de toque gigantes).
 - **Backend Serverless**: Funções Serverless prontas para o **Vercel** sob a pasta [`/api/`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api).
 - **Otimização de Imagens**: Utilitário cliente [`imageCompressor.js`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/src/utils/imageCompressor.js) via HTML5 Canvas (reduz fotos de 5MB-12MB para ~150KB-250KB antes do upload).
-- **IA e Visão Computacional**: Arquitetura desacoplada com interface [`VisionProvider`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/lib/vision/VisionProvider.js) e implementação OpenAI Vision ([`OpenAIVisionProvider`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/lib/vision/OpenAIVisionProvider.js)).
-- **Bulário Oficial**: Serviço [`anvisaService.js`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/lib/bulario/anvisaService.js) que valida indicações e posologia exclusivamente em fontes oficiais da ANVISA, impedindo alucinações.
+- **IA e Visão Computacional**: Arquitetura desacoplada com interface [`VisionProvider`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/_lib/vision/VisionProvider.js) e implementação OpenAI Vision ([`OpenAIVisionProvider`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/_lib/vision/OpenAIVisionProvider.js)).
+- **Bulário Oficial**: Serviço [`anvisaService.js`](file:///c:/Users/Usuario/Desktop/repositorios-mariana/vivavos/vivavos-project/api/_lib/bulario/anvisaService.js) que valida indicações e posologia exclusivamente em fontes oficiais da ANVISA, impedindo alucinações.
 
 ---
 
