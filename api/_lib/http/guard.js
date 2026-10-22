@@ -33,7 +33,7 @@ function isSameOrigin(req) {
   }
 }
 
-function isRateLimited(ip) {
+function isRateLimited(ip, maxRequests) {
   const now = Date.now();
   const recent = (hitsByIp.get(ip) || []).filter((t) => now - t < WINDOW_MS);
   recent.push(now);
@@ -46,22 +46,23 @@ function isRateLimited(ip) {
     }
   }
 
-  return recent.length > MAX_REQUESTS_PER_WINDOW;
+  return recent.length > maxRequests;
 }
 
 /**
  * Valida a requisição. Devolve null se estiver tudo certo, ou { status, code, message } para recusar.
+ * `maxRequests` permite um limite maior para rotas baratas e frequentes, como a de voz.
  */
-export function guardRequest(req) {
+export function guardRequest(req, { maxRequests = MAX_REQUESTS_PER_WINDOW } = {}) {
   if (!isSameOrigin(req)) {
     return { status: 403, code: 'FORBIDDEN_ORIGIN', message: 'Esta rota só pode ser usada pelo site do Vivavós.' };
   }
 
-  if (isRateLimited(clientIp(req))) {
+  if (isRateLimited(clientIp(req), maxRequests)) {
     return {
       status: 429,
       code: 'TOO_MANY_REQUESTS',
-      message: 'Muitas fotos enviadas em pouco tempo. Espere alguns minutos e tente de novo.',
+      message: 'Muitos pedidos em pouco tempo. Espere alguns minutos e tente de novo.',
     };
   }
 

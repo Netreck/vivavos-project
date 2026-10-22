@@ -3,6 +3,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // Vozes brasileiras mais naturais primeiro (Edge, Chrome, Windows, Apple)
 const PREFERRED_PT_BR_VOICES = ['Francisca', 'Thalita', 'Antonio', 'Google', 'Luciana', 'Maria', 'Daniel', 'Felipe'];
 
+// Velocidade "normal" da escala do app; a voz da OpenAI toca em 1x nesse ponto
+const BASE_RATE = 0.85;
+const MAX_CACHED_AUDIOS = 30;
+
+// WAV mudo de poucos bytes, tocado no primeiro toque para o celular liberar o áudio depois
+const SILENT_WAV =
+  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+
 /**
  * Escolhe uma voz do português do Brasil. Nunca devolve voz de Portugal (pt-PT).
  */
@@ -16,36 +24,79 @@ export function pickBrazilianVoice(voices) {
   return ptBr[0];
 }
 
-export function useTextToSpeech(initialRate = 0.85) {
+async function fetchSpeechAudio(text) {
+  const response = await fetch('/api/speak', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    const error = new Error(`Voz indisponível (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
+/**
+ * Fala em português do Brasil.
+ * 1º: voz da OpenAI (sotaque brasileiro garantido), via /api/speak.
+ * 2º (reserva): voz do próprio navegador, só se houver voz pt-BR ou se a OpenAI falhar.
+ */
+export function useTextToSpeech(initialRate = BASE_RATE) {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSupported, setIsSupported] = useState(true);
+  const [isSupported] = useState(() => typeof window !== 'undefined' && ('Audio' in window || 'speechSynthesis' in window));
   const [rate, setRate] = useState(() => {
     const saved = localStorage.getItem('vivavos-speech-rate');
     return saved ? parseFloat(saved) : initialRate;
   });
-  const currentUtteranceRef = useRef(null);
+
+  const audioRef = useRef(null);
+  const cacheRef = useRef(new Map()); // texto -> URL do áudio já gerado ("Ouvir de novo" não gera de novo)
+  const serverVoiceAvailableRef = useRef(true);
+  const speechIdRef = useRef(0); // cada fala nova invalida a anterior
 
   useEffect(() => {
-    if (!window.speechSynthesis) {
-      setIsSupported(false);
-      return;
-    }
-    // No Chrome a lista de vozes chega depois; pedir de novo garante que ela esteja pronta na primeira fala
-    const loadVoices = () => window.speechSynthesis.getVoices();
+    audioRef.current = new Audio();
+
+    // Libera o áudio no primeiro toque (exigência de celulares, principalmente iPhone)
+    const unlock = () => {
+      const audio = audioRef.current;
+      if (audio && !audio.src) {
+        audio.src = SILENT_WAV;
+        audio.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+
+    // No Chrome a lista de vozes do navegador chega depois; pedir de novo deixa a reserva pronta
+    const loadVoices = () => window.speechSynthesis?.getVoices();
     loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices);
+      audioRef.current?.pause();
+      for (const url of cacheRef.current.values()) URL.revokeObjectURL(url);
+    };
   }, []);
 
   useEffect(() => {
     localStorage.setItem('vivavos-speech-rate', rate.toString());
+    if (audioRef.current) audioRef.current.playbackRate = rate / BASE_RATE;
   }, [rate]);
 
-  const speak = useCallback(
-    (text, onEndCallback) => {
-      if (!window.speechSynthesis || !text) return;
-
-      // Cancela fala anterior
+  const speakWithBrowser = useCallback(
+    (text, onEndCallback, speechId) => {
+      if (!window.speechSynthesis) {
+        setIsSpeaking(false);
+        return;
+      }
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -55,35 +106,80 @@ export function useTextToSpeech(initialRate = 0.85) {
 
       // Usa somente vozes do português do Brasil; sem nenhuma, o navegador escolhe pelo lang pt-BR
       const ptBrVoice = pickBrazilianVoice(window.speechSynthesis.getVoices());
-      if (ptBrVoice) {
-        utterance.voice = ptBrVoice;
-      }
-
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
+      if (ptBrVoice) utterance.voice = ptBrVoice;
 
       utterance.onend = () => {
+        if (speechId !== speechIdRef.current) return;
         setIsSpeaking(false);
         if (onEndCallback) onEndCallback();
       };
-
       utterance.onerror = (e) => {
         console.warn('Erro na síntese de fala:', e);
-        setIsSpeaking(false);
+        if (speechId === speechIdRef.current) setIsSpeaking(false);
       };
 
-      currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     },
     [rate]
   );
 
-  const stop = useCallback(() => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+  const getAudioUrl = useCallback(async (text) => {
+    const cache = cacheRef.current;
+    if (cache.has(text)) return cache.get(text);
+    const url = await fetchSpeechAudio(text);
+    cache.set(text, url);
+    if (cache.size > MAX_CACHED_AUDIOS) {
+      const [oldestText, oldestUrl] = cache.entries().next().value;
+      URL.revokeObjectURL(oldestUrl);
+      cache.delete(oldestText);
     }
+    return url;
+  }, []);
+
+  const speak = useCallback(
+    async (text, onEndCallback) => {
+      if (!text) return;
+
+      // Cancela fala anterior
+      const speechId = ++speechIdRef.current;
+      audioRef.current?.pause();
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(true);
+
+      const audio = audioRef.current;
+      if (audio && serverVoiceAvailableRef.current) {
+        try {
+          const url = await getAudioUrl(text);
+          if (speechId !== speechIdRef.current) return;
+
+          audio.src = url;
+          audio.playbackRate = rate / BASE_RATE;
+          audio.onended = () => {
+            if (speechId !== speechIdRef.current) return;
+            setIsSpeaking(false);
+            if (onEndCallback) onEndCallback();
+          };
+          audio.onerror = null;
+          await audio.play();
+          return;
+        } catch (err) {
+          if (speechId !== speechIdRef.current) return;
+          // Sem chave ou rota bloqueada: não adianta tentar a OpenAI de novo nesta visita
+          if (err.status === 503 || err.status === 403) serverVoiceAvailableRef.current = false;
+          console.warn('Voz da OpenAI indisponível, usando a voz do navegador:', err.message);
+        }
+      }
+
+      speakWithBrowser(text, onEndCallback, speechId);
+    },
+    [rate, getAudioUrl, speakWithBrowser]
+  );
+
+  const stop = useCallback(() => {
+    speechIdRef.current++;
+    audioRef.current?.pause();
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
   }, []);
 
   const increaseSpeed = useCallback(() => {
